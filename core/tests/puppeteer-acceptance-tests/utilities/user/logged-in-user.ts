@@ -1140,7 +1140,17 @@ export class LoggedInUser extends BaseUser {
     await this.isTextPresentOnPage("Remove from 'Play Later' list?");
 
     await this.clickOnElementWithSelector(confirmRemovalFromPlayLaterButton);
-    await this.page.waitForSelector(learnerPlaylistModalSelector, {
+
+    // Wait for the confirm button (which lives inside the modal) to be
+    // removed from the DOM rather than waiting for 'oppia-learner-playlist-modal'
+    // itself. NgbModal wraps the component inside ngb-modal-window and applies
+    // a CSS fade-out animation on close; under CI load the host element can
+    // remain visible during the animation long enough to exceed the 30 s
+    // timeout. Waiting for the button is more deterministic because it is
+    // destroyed together with the modal subtree. This matches the strategy
+    // used by removeLessonFromPlayLater (learner dashboard variant).
+    // Fix for issue #23176.
+    await this.page.waitForSelector(confirmRemovalFromPlayLaterButton, {
       hidden: true,
     });
   }

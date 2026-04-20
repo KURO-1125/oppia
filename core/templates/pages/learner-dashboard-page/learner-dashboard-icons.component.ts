@@ -24,6 +24,7 @@ import {LearnerDashboardActivityBackendApiService} from 'domain/learner_dashboar
 import {LearnerDashboardActivityIds} from 'domain/learner_dashboard/learner-dashboard-activity-ids.model';
 import {LearnerPlaylistModalComponent} from './modal-templates/learner-playlist-modal.component';
 import {NgbModal} from '@ng-bootstrap/ng-bootstrap';
+import {UrlInterpolationService} from 'domain/utilities/url-interpolation.service';
 
 @Component({
   selector: 'oppia-learner-dashboard-icons',
@@ -45,7 +46,8 @@ export class LearnerDashboardIconsComponent implements OnInit {
   constructor(
     private learnerDashboardIdsBackendApiService: LearnerDashboardIdsBackendApiService,
     private learnerDashboardActivityBackendApiService: LearnerDashboardActivityBackendApiService,
-    private ngbModal: NgbModal
+    private ngbModal: NgbModal,
+    private urlInterpolationService: UrlInterpolationService
   ) {}
 
   ngOnInit(): void {
@@ -175,12 +177,26 @@ export class LearnerDashboardIconsComponent implements OnInit {
     // TODO(#14290): Find a better way to refactor code that opens modals
     // into new services that use the page specific injector rather than
     // the root injector.
+
+    // Fix for issue #23176: ng-bootstrap's NgbModal.open() calls the modal
+    // component's ngOnInit() synchronously before returning modelRef, so any
+    // @Input() properties assigned to componentInstance afterward are not yet
+    // available during ngOnInit(). Pre-computing the URL here guarantees it
+    // is set correctly before remove() is called inside the modal.
+    const removeFromLearnerPlaylistUrl =
+      this.urlInterpolationService.interpolateUrl(
+        '/learnerplaylistactivityhandler/<activityType>/<activityId>',
+        {activityType, activityId}
+      );
+
     const modelRef = this.ngbModal.open(LearnerPlaylistModalComponent, {
       backdrop: true,
     });
     modelRef.componentInstance.activityId = activityId;
     modelRef.componentInstance.activityTitle = activityTitle;
     modelRef.componentInstance.activityType = activityType;
+    modelRef.componentInstance.removeFromLearnerPlaylistUrl =
+      removeFromLearnerPlaylistUrl;
     modelRef.result.then(
       playlistUrl => {
         this.learnerDashboardActivityBackendApiService.removeFromLearnerPlaylist(

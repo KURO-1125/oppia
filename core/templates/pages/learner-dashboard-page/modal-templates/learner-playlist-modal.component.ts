@@ -43,14 +43,21 @@ export class LearnerPlaylistModalComponent implements OnInit {
 
   ngOnInit(): void {
     this.sectionNameI18nId = 'I18N_LEARNER_DASHBOARD_PLAYLIST_SECTION';
-    this.removeFromLearnerPlaylistUrl =
-      this.urlInterpolationService.interpolateUrl(
-        '/learnerplaylistactivityhandler/' + '<activityType>/<activityId>',
-        {
-          activityType: this.activityType,
-          activityId: this.activityId,
-        }
-      );
+    // Fix for issue #23176: the parent (LearnerDashboardIconsComponent)
+    // pre-computes and assigns removeFromLearnerPlaylistUrl to
+    // componentInstance after NgbModal.open() but before the user can
+    // click 'Remove'. We only build the URL here as a fallback so that
+    // the component remains self-contained when used outside that context.
+    if (!this.removeFromLearnerPlaylistUrl) {
+      this.removeFromLearnerPlaylistUrl =
+        this.urlInterpolationService.interpolateUrl(
+          '/learnerplaylistactivityhandler/' + '<activityType>/<activityId>',
+          {
+            activityType: this.activityType,
+            activityId: this.activityId,
+          }
+        );
+    }
   }
 
   remove(): void {
